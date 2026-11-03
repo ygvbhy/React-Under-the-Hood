@@ -1,6 +1,6 @@
 # 개념 로드맵
 
-- 상태: 확정(개념 작성 전)
+- 상태: 확정 · 작성 중 (1번 작성 2026-11-03)
 - 작성일: 2026-11-02
 - 근거: 2026-11-02 사용자 확정 (`.claude/plans/react-uth-initial-setup.md` 부록 A)
 
@@ -16,7 +16,7 @@
 
 | #   | 제목                                                       | 카테고리       | order | JS 연결                                                                                          | React 18 차이                                                |
 | --- | ---------------------------------------------------------- | -------------- | ----- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| 1   | JSX는 함수 호출이다: element는 그냥 객체                   | `rendering`    | 10    | 후보(개념 작성 시 확정): `function-calls`, `primitives-and-objects`                              | 작성 시 확인 (element의 `ref`)                               |
+| 1   | JSX는 함수 호출이다: element는 그냥 객체                   | `rendering`    | 10    | 확정: `function-calls`, `primitives-and-objects` | 있음: ref가 `element.ref`에서 `props.ref`로 (업그레이드 가이드) |
 | 2   | 렌더링은 컴포넌트 함수를 호출하는 것: 트리거 → 렌더 → 커밋 | `rendering`    | 20    | 후보(개념 작성 시 확정): `function-calls`                                                        | -                                                            |
 | 3   | 순수 함수와 StrictMode: 왜 두 번 실행될까                  | `rendering`    | 30    | -                                                                                                | 작성 시 확인 (StrictMode 두 번째 렌더의 메모이제이션 재사용) |
 | 4   | props는 읽기 전용이다                                      | `rendering`    | 40    | 후보(개념 작성 시 확정): `primitives-and-objects`, `property-attributes`                         | -                                                            |

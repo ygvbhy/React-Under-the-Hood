@@ -8,9 +8,9 @@
   --fg: #1c1917;
   --muted: #57534e;
   --border: #d6d3d1;
-  --accent: #b45309; /* amber-700: bg 위 텍스트 대비 AA */
+  --accent: #08799d; /* react.dev 링크색 #087ea4를 4% 어둡게: bg·surface·highlight 위 텍스트 대비 AA */
   --accent-fg: #ffffff;
-  --highlight: #fef3c7;
+  --highlight: #e6f7ff; /* react.dev bg-highlight */
   --danger: #b91c1c;
   --success: #15803d;
 }
@@ -22,9 +22,9 @@
     --fg: #fafaf9;
     --muted: #a8a29e;
     --border: #44403c;
-    --accent: #fcd34d; /* amber-300 */
+    --accent: #58c4dc; /* react.dev 다크 링크색 */
     --accent-fg: #1c1917;
-    --highlight: #422f0b;
+    --highlight: #22282b; /* react.dev 다크 강조 rgba(88,175,223,.1)를 bg에 합성 */
     --danger: #fca5a5;
     --success: #86efac;
   }

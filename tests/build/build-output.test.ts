@@ -55,8 +55,7 @@ describe('개념 레지스트리', () => {
   })
 })
 
-// 개념이 0개면 it.each가 빈 목록이 되어 Vitest가 "No test found"로 실패하므로 건너뛴다
-describe.skipIf(concepts.length === 0)('개념 상세 HTML', () => {
+describe('개념 상세 HTML', () => {
   it.each(concepts.map((c) => [c.slug, c] as const))('%s', (slug, concept) => {
     const html = read(`concepts/${slug}/index.html`)
     const text = htmlToText(html)
@@ -82,15 +81,54 @@ describe.skipIf(concepts.length === 0)('개념 상세 HTML', () => {
   })
 })
 
-// 첫 개념의 시뮬레이터는 프리렌더 HTML에 단계 0 상태가 정적으로 들어 있어야 하고,
+// 시뮬레이터는 프리렌더 HTML에 단계 0 상태가 정적으로 들어 있어야 하고,
 // 본문보다 넓은 블록으로 배치되도록 .concept-body의 직계 자식이어야 한다(app.css의 [data-wide] 규칙).
-// 두 번째 개념의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
 // React가 텍스트 노드 사이에 넣는 주석(<!-- -->)은 htmlToText가 태그와 함께 제거한다.
-// 세 번째 개념(type-coercion)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 네 번째 개념(equality-operators)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 일곱 번째 개념(increment-decrement)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 다섯 번째 개념(number-type)은 시뮬레이터 없이 표와 퀴즈로 구성된다. 둘 다 프리렌더 HTML에 있어야 한다.
-// 여섯 번째 개념(typeof-operator)은 시뮬레이터 없이 표와 퀴즈로 구성된다. 둘 다 프리렌더 HTML에 있어야 한다.
+describe('시뮬레이터 프리렌더 (jsx-to-element)', () => {
+  const html = read('concepts/jsx-to-element/index.html')
+  const text = htmlToText(html)
+
+  it('단계 1(실행 전) 텍스트와 빈 상태 문구가 HTML에 있다', () => {
+    expect(text).toContain('단계 1: 실행 전')
+    expect(text).toContain('아직 만든 element가 없습니다.')
+    expect(text).toContain('아직 호출되지 않음')
+    expect(text).toContain('비어 있음')
+    expect(text).toContain('(아직 출력 없음)')
+  })
+
+  it('시뮬레이터 루트가 data-wide 영역이고 .concept-body의 직계 자식이다', () => {
+    const region = html.match(
+      /<div[^>]*role="region"[^>]*aria-label="JSX element 시뮬레이터"[^>]*>/,
+    )
+    expect(region, '시뮬레이터 region이 없습니다').not.toBeNull()
+    expect(region![0]).toContain('data-wide')
+    // .concept-body 안에서 div 깊이가 0인 위치(직계 자식)여야 하고, <p>로 감싸이면 안 된다
+    const bodyOpen = '<div class="concept-body">'
+    const bodyStart = html.indexOf(bodyOpen)
+    expect(bodyStart).toBeGreaterThan(-1)
+    const between = html.slice(bodyStart + bodyOpen.length, region!.index)
+    const opens = between.match(/<div[\s>]/g)?.length ?? 0
+    const closes = between.match(/<\/div>/g)?.length ?? 0
+    expect(opens - closes, '시뮬레이터가 .concept-body의 직계 자식이 아닙니다').toBe(0)
+    expect(between.trimEnd().endsWith('<p>')).toBe(false)
+  })
+
+  it('두 시나리오 선택 라디오가 있다', () => {
+    for (const label of ['JSX와 createElement', '중첩된 JSX']) {
+      expect(text).toContain(label)
+    }
+    expect(html.match(/type="radio"/g)?.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('퀴즈 3개의 정답이 <details>로 프리렌더된다', () => {
+    expect(html.match(/<details/g)?.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('결과 표의 props.children이 HTML에 있다', () => {
+    expect(text).toContain('props.children')
+  })
+})
+
 describe('홈·소개 HTML', () => {
   it('홈에 모든 개념 제목과 링크가 있다', () => {
     const html = read('index.html')
@@ -223,31 +261,8 @@ describe('sitemap.xml·robots.txt', () => {
   })
 })
 
-// 여덟 번째 개념(switch-break-continue)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 아홉 번째 개념(property-keys)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 열 번째 개념(function-calls)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 열한 번째 개념(hoisting)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 열두 번째 개념(scope-chain)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 열세 번째 개념(block-scope)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 열네 번째 개념(tdz)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 열다섯 번째 개념(property-attributes)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 열여섯 번째 개념(new-operator)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 열일곱 번째 개념(prototype-chain)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 일곱 번째 개념(primitive-methods)은 시뮬레이터 없이 표와 퀴즈로 구성된다. 둘 다 프리렌더 HTML에 있어야 한다.
-// 추가 게시글(global-object)은 시뮬레이터 없이 표와 퀴즈로 구성된다. 둘 다 프리렌더 HTML에 있어야 한다.
-// 추가 게시글(iife-module-pattern)은 시뮬레이터 없이 표와 퀴즈로 구성된다. 둘 다 프리렌더 HTML에 있어야 한다.
-// 25~37장 로드맵 1번(class-basics)은 시뮬레이터 없이 비교표와 퀴즈로 구성된다. 둘 다 프리렌더 HTML에 있어야 한다.
-// 25~37장 로드맵 2번(class-inheritance)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 25~37장 로드맵 3번(arrow-functions)은 시뮬레이터 없이 비교표와 퀴즈로 구성된다. 둘 다 프리렌더 HTML에 있어야 한다.
-// 25~37장 로드맵 4번(array-index-length)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 여덟 번째 개념(this-binding)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 아홉 번째 개념(execution-context)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 열 번째 개념(closure)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 추가 게시글(for-let)의 시뮬레이터와 퀴즈도 프리렌더 HTML에 정적으로 들어 있어야 한다.
-// 25~37장 로드맵 5번(array-method-pitfalls)은 시뮬레이터 없이 반환값 표와 퀴즈로 구성된다. 둘 다 프리렌더 HTML에 있어야 한다.
 // 학습 순서 이전/다음: 관련 개념 링크와 섞이지 않도록 nav 영역만 잘라 검사한다.
-// 개념이 0개면 it.each가 빈 목록이 되어 Vitest가 "No test found"로 실패하므로 건너뛴다
-describe.skipIf(concepts.length === 0)('학습 순서 pager', () => {
+describe('학습 순서 pager', () => {
   const ordered = sortByOrder(concepts)
   const navHtml = (slug: string) => {
     const html = read(`concepts/${slug}/index.html`)

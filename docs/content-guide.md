@@ -1,6 +1,6 @@
 # 콘텐츠 작성 가이드
 
-새 개념 페이지를 추가하는 절차, 작성 규칙, 사람 검토 체크리스트입니다. 이 절차만 따르면 `app/routes.ts`, `app/lib/`, `tests/` 같은 공통 코드를 고치지 않고 개념을 추가할 수 있습니다. 프로젝트 전체 규칙은 [AGENTS.md](../AGENTS.md)를 보세요. 아직 개념 페이지가 없으므로, 첫 개념이 만들어지면 그 폴더가 가장 먼저 읽을 참고 구현이 됩니다. 쓸 개념과 순서는 [.claude/plans/concept-roadmap.md](../.claude/plans/concept-roadmap.md)를 따릅니다.
+새 개념 페이지를 추가하는 절차, 작성 규칙, 사람 검토 체크리스트입니다. 이 절차만 따르면 `app/routes.ts`, `app/lib/`, `tests/` 같은 공통 코드를 고치지 않고 개념을 추가할 수 있습니다. 프로젝트 전체 규칙은 [AGENTS.md](../AGENTS.md)를 보세요. 첫 개념 [`app/concepts/jsx-to-element/`](../app/concepts/jsx-to-element/)가 가장 먼저 읽을 참고 구현입니다(예제, 시뮬레이터, `concept.test.ts`, `Simulator.test.tsx`, 결과 표). 쓸 개념과 순서는 [.claude/plans/concept-roadmap.md](../.claude/plans/concept-roadmap.md)를 따릅니다.
 
 ## 새 개념 추가 절차
 
@@ -165,7 +165,7 @@ export default function ConceptRoute() {
 
 - React 예제 실행(L1, jsdom과 Chromium), 메타 무결성·필수 h2·JS 링크 무결성(L3), 빌드 결과(홈 목록, sitemap, canonical, 구조화 데이터(JSON-LD)와 sitemap `lastmod` 등)는 **공통 테스트가 폴더를 자동으로 찾아** 검사합니다. 따로 테스트를 쓸 필요가 없습니다.
 - 시뮬레이터가 있다면 `concept.test.ts`를 추가해 시나리오마다 `assertScenarioInvariants(scenario, example, source)`를 호출합니다(`tests/helpers/scenario-invariants.ts`). 코드 원문 일치, 마지막 출력 일치, 출력 누적, `line` 범위, 단계 수를 검사합니다. 상태 참조 무결성은 상태 모양이 개념마다 다르므로 `concept.test.ts`에서 직접 검사합니다. 시뮬레이터가 있는 첫 개념의 `concept.test.ts`가 예시가 됩니다.
-- 개념 0개로 시작하면서 개념에 묶인 테스트 일부를 제거했습니다(이전/다음 페이저, 개념 페이지 e2e, JS 꺼짐 e2e 등). 첫 개념을 추가할 때 이 테스트들을 다시 추가합니다. 제거한 테스트 목록은 `.claude/plans/react-uth-initial-setup.md`의 "구현 진행"에 있습니다.
+- 개념 페이지 e2e(`tests/e2e/concept.spec.ts`, `tests/e2e/no-js.spec.ts`)는 첫 개념 `jsx-to-element`를 대상으로 합니다. 학습 순서·개념 수를 다루는 테스트(`navigation.spec.ts`, `app/lib/concepts.test.ts`, `build-output`의 pager 검사)는 개념 수에 의존하지 않게 쓰여 있어 새 개념을 추가해도 고치지 않습니다.
 
 ### 8. dev 서버 재시작
 

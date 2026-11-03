@@ -1,0 +1,163 @@
+import { Simulator } from './Simulator'
+import { scenarios } from './scenarios'
+
+이 글은 JSX 태그를 쓴 줄에서 실제로 무엇이 만들어지는지 실행 결과로 확인합니다. JSX 태그가 `createElement` 호출과 같은 element를 만든다는 것, 그 element가 `type`, `props`, `key`를 가진 평범한 객체라는 것, 그리고 element를 만드는 것만으로는 컴포넌트가 호출되지 않는다는 것을 차례로 봅니다.
+
+함수 호출은 <JsLink slug="function-calls">함수 호출</JsLink>, 객체는 <JsLink slug="primitives-and-objects">원시 값과 객체</JsLink>에서 본 것을 전제합니다.
+
+## 동작 원리
+
+JSX 태그는 함수 호출을 다르게 쓴 표기입니다. 빌드 도구가 JSX를 함수 호출로 바꾸고, 그 호출의 결과가 element입니다. React 문서도 JSX가 평범한 자바스크립트 객체로 바뀐다고 설명합니다. 이 페이지는 같은 element를 만드는 공개 API `createElement`로 JSX와 비교합니다. 실제 빌드가 부르는 함수는 `createElement`가 아니라 빌드 도구 설정이 정한 JSX 런타임 함수이지만, 만들어지는 element의 `type`, `props`, `key`는 같습니다.
+
+element 객체에서 이 페이지가 보는 칸은 세 가지입니다.
+
+- `type`: 태그 이름 또는 컴포넌트 함수입니다. 소문자로 시작하는 `<section>`은 문자열 `"section"`이 되고, 대문자로 시작하는 `<Greeting />`은 그 이름의 변수 `Greeting`이 가리키는 값(여기서는 함수)이 됩니다. `<Greeting />`은 `createElement(Greeting)`과 같습니다.
+- `props`: JSX에 쓴 속성이 키가 된 객체입니다. 태그 사이에 쓴 자식은 `props.children`에 들어갑니다. 자식이 하나면 그 값이, 둘 이상이면 배열이 들어갑니다(예제 2의 `h2`와 `section`).
+- `key`: JSX에 쓴 `key`는 문자열로 바뀌어 element의 `key`에 들어갑니다. 쓰지 않으면 `null`입니다.
+
+element를 만드는 것과 컴포넌트가 호출되는 것은 다릅니다. element는 "이런 컴포넌트를 이런 props로 그려 달라"는 설명일 뿐이고, 만든 시점에는 컴포넌트 함수가 호출되지 않고 DOM도 만들어지지 않습니다. 컴포넌트는 `render`에 넘긴 element를 React가 렌더할 때 호출됩니다.
+
+<Callout type="note">
+  이 페이지는 동작을 보려고 element의 속성을 직접 읽습니다. 실제 코드에서는 만든 element를 열어 보지
+  않고 불투명하게 다루면서 렌더에만 넘기라는 것이 react.dev의 권장입니다. element와 props는 만든
+  뒤에 바꾸지 않아야 하며, 개발 모드에서 React가 얕게 freeze합니다.
+</Callout>
+
+## 예제
+
+### 예제 1: JSX와 createElement
+
+```jsx file=./examples/element-object.jsx
+
+```
+
+<PredictQuiz
+  question='예제 1의 출력에서 "Greeting 호출: 민지"는 몇 번째 줄에 나올까요?'
+  choices={[
+    '다섯 번째 줄(마지막)',
+    '첫 번째 줄',
+    '두 번 나온다(fromJsx와 fromCall마다)',
+    '나오지 않는다',
+  ]}
+  answer={0}
+  explanation="element를 만드는 9·10줄에서는 Greeting이 호출되지 않고, render에 넘긴 fromJsx를 React가 렌더할 때 한 번 호출됩니다. fromCall은 렌더하지 않았으므로 호출되지 않습니다."
+/>
+
+출력의 첫 줄에서 `fromJsx`는 `object`이고 `type`이 `Greeting` 함수와 같습니다(`true`). 둘째·셋째 줄에서 JSX로 만든 element와 `createElement`로 만든 element의 `props`는 둘 다 `{"name":"민지"}`입니다. 그런데 넷째 줄에서 `fromJsx === fromCall`은 `false`입니다. 내용이 같아도 서로 다른 객체이기 때문입니다. 마지막 줄의 `Greeting 호출: 민지`는 element를 만든 줄이 아니라 `render`에 넘긴 뒤에 나옵니다.
+
+### 예제 2: 중첩된 JSX와 children
+
+```jsx file=./examples/element-tree.jsx
+
+```
+
+<PredictQuiz
+  question="예제 2의 출력에서 card.props.children.length는 얼마일까요?"
+  choices={['1', '2', '3', '4']}
+  answer={1}
+  explanation="section 안의 h2 태그 하나와 텍스트 본문 하나, 모두 두 개가 props.children 배열에 들어갑니다."
+/>
+
+`card.props.className`은 JSX에 쓴 `className` 속성이고, 자식 태그와 텍스트는 `card.props.children` 배열이 됩니다(`true 2`). 첫 자식은 `type`이 `"h2"`인 또 하나의 element 객체이고 그 `props.children`은 문자열 `제목`입니다. 둘째 자식 `본문`은 element가 아니라 문자열입니다(`string`).
+
+### 시뮬레이터로 확인하기
+
+두 예제를 한 줄씩 실행하면서 변수에 들어간 element와 컴포넌트 호출 기록, `#root`가 어떻게 달라지는지 봅니다. 첫 시나리오에서는 `render` 단계 전까지 호출 기록이 비어 있습니다.
+
+<Simulator scenarios={scenarios} />
+
+### 예제 3: key와 ref는 어디에 들어갈까
+
+```jsx file=./examples/key-and-ref.jsx
+
+```
+
+<PredictQuiz
+  question="예제 3의 두 번째 줄 출력 Object.keys(field.props)는 무엇일까요?"
+  choices={[
+    '["ref","placeholder"]',
+    '["key","ref","placeholder"]',
+    '["placeholder"]',
+    '["key","placeholder"]',
+  ]}
+  answer={0}
+  explanation="key는 element.key로 가서 props로 전달되지 않고, ref는 React 19에서 props.ref에 들어갑니다. 그래서 열거되는 props 키는 ref와 placeholder입니다."
+/>
+
+첫 줄 `q`는 JSX에 쓴 `key`가 `field.key`에 들어갔다는 뜻입니다. 둘째 줄에서 열거되는 `props`의 키에는 `key`가 없고 `ref`와 `placeholder`가 있습니다. 즉 `key`는 `props`로 전달되지 않고, `ref`는 `props.ref`에 들어갑니다(셋째 줄 `true`).
+
+<Callout type="react18">
+  React 18까지는 ref가 props와 분리되어 <code>{'element.ref'}</code>에 있었습니다. React 19는 함수
+  컴포넌트가 ref를 prop으로 받도록 바꾸면서 <code>{'element.props.ref'}</code>를 쓰게 하고{' '}
+  <code>{'element.ref'}</code>를 사용 중단(deprecated)했습니다. 19.3.1의 개발 빌드에서{' '}
+  <code>{'element.ref'}</code>를 읽으면 경고가 나지만 값은 돌려줍니다. 근거는 [React 19 업그레이드
+  가이드](https://react.dev/blog/2024/04/25/react-19-upgrade-guide#deprecated-element-ref)와 [React
+  19 글](https://react.dev/blog/2024/12/05/react-19#ref-as-a-prop)입니다. 한편 react.dev
+  createElement 문서의 Parameters·Returns 설명은 ref가 props에서 빠진다고 쓰지만, 19.3.1에서 실행한
+  결과(예제 3)는 <code>{'props.ref'}</code>입니다.
+</Callout>
+
+## 결과와 이유
+
+JSX에 쓴 것은 모두 element 객체의 어딘가에 들어갑니다. 태그 이름이나 컴포넌트 함수는 `type`, 속성은 `props`의 키, 자식은 `props.children`, `key`는 `element.key`, `ref`는 `props.ref`입니다. 그리고 이 객체를 만드는 일은 컴포넌트를 호출하지 않습니다.
+
+<div className="my-6 overflow-x-auto">
+  <table>
+    <thead>
+      <tr>
+        <th>JSX에 쓴 것</th>
+        <th>element에서의 위치</th>
+        <th>확인한 예제</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          속성(<code>name="민지"</code>, <code>className="card"</code>)
+        </td>
+        <td>
+          <code>props.&lt;이름&gt;</code>
+        </td>
+        <td>예제 1·2</td>
+      </tr>
+      <tr>
+        <td>자식 태그와 텍스트</td>
+        <td>
+          <code>props.children</code>(하나면 그 값, 둘 이상이면 배열)
+        </td>
+        <td>예제 2</td>
+      </tr>
+      <tr>
+        <td>
+          <code>key</code>
+        </td>
+        <td>
+          <code>element.key</code>(문자열로 바뀌고 props로 전달되지 않음)
+        </td>
+        <td>예제 3</td>
+      </tr>
+      <tr>
+        <td>
+          <code>ref</code>
+        </td>
+        <td>
+          <code>props.ref</code>(React 19)
+        </td>
+        <td>예제 3</td>
+      </tr>
+      <tr>
+        <td>태그 이름·컴포넌트 함수</td>
+        <td>
+          <code>element.type</code>
+        </td>
+        <td>예제 1·2</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<Callout type="misconception" title="JSX를 쓰면 그 자리에서 컴포넌트가 실행된다">
+  JSX 태그를 쓴 줄은 element 객체를 만들 뿐 컴포넌트를 호출하지 않습니다. 예제 1에서 `fromJsx`와
+  `fromCall`을 만드는 9·10줄에는 `Greeting 호출`이 찍히지 않았고, `render`에 넘긴 `fromJsx`를
+  React가 렌더할 때 한 번 찍혔습니다.
+</Callout>

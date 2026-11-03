@@ -116,7 +116,7 @@ vercel.json, serve.json          # 배포 설정, 로컬 정적 서빙 설정
 npm run lint && npm run format:check && npm run typecheck && npm test && npm run test:build && npm run e2e
 ```
 
-e2e 범위: 새 개념 폴더만 추가하고 공통 코드(`app/components/`, `app/simulator/`, `app/lib/`, `app/routes/`, `app/root.tsx`, `app/routes.ts`, `app/app.css`, 설정)를 바꾸지 않았으면 전체 `npm run e2e` 대신 새 페이지 관련 e2e만 실행한다. 개념 테스트가 없던 상태(개념 0개)에서 시작했으므로 `navigation.spec.ts`는 지금 개념 개수·이전/다음을 고정하지 않는다. 첫 개념과 함께 개념 e2e를 다시 추가하면 그 개념에 맞게 이 문장을 갱신한다. `react-examples.spec.ts`는 새 예제를 Chromium에서 실행하므로 반드시 함께 실행한다. `<slug>`와 `<a11y 케이스 이름>`은 새 개념에 맞춘다.
+e2e 범위: 새 개념 폴더만 추가하고 공통 코드(`app/components/`, `app/simulator/`, `app/lib/`, `app/routes/`, `app/root.tsx`, `app/routes.ts`, `app/app.css`, 설정)를 바꾸지 않았으면 전체 `npm run e2e` 대신 새 페이지 관련 e2e만 실행한다. `navigation.spec.ts`는 개념 수와 학습 순서를 각 개념의 `meta.ts`에서 계산하므로(`tests/e2e/helpers.ts`의 `loadConceptsByOrder`) 새 개념을 추가해도 고치지 않는다. 개념 페이지 e2e(`concept.spec.ts`, `no-js.spec.ts`)와 `CONCEPT_PATH`·`SIMULATOR_NAME`은 첫 개념 `jsx-to-element`를 대상으로 한다. `react-examples.spec.ts`는 새 예제를 Chromium에서 실행하므로 반드시 함께 실행한다. `<slug>`와 `<a11y 케이스 이름>`은 새 개념에 맞춘다.
 
 ```bash
 npx playwright test tests/e2e/navigation.spec.ts tests/e2e/react-examples.spec.ts && npx playwright test -g "<slug>|<a11y 케이스 이름>"

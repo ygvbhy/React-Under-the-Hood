@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { waitForHydration } from './helpers'
+import { CONCEPT_PATH, SIMULATOR_NAME, waitForHydration } from './helpers'
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
@@ -36,6 +36,48 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await expectNoSeriousViolations(page)
       await page.goto('/?q=zzz')
       await waitForHydration(page)
+      await expectNoSeriousViolations(page)
+    })
+
+    test('홈: 학습 순서 보기', async ({ page }) => {
+      await page.goto('/?view=order')
+      await waitForHydration(page)
+      await expect(page.getByRole('heading', { level: 3, name: '학습 순서' })).toBeVisible()
+      await expectNoSeriousViolations(page)
+    })
+
+    test('개념 페이지', async ({ page }) => {
+      await page.goto(CONCEPT_PATH)
+      await waitForHydration(page)
+      await expect(page.getByRole('button', { name: '정답 확인' }).first()).toBeVisible()
+      await expectNoSeriousViolations(page)
+    })
+
+    test('개념 페이지: 시뮬레이터를 진행한 뒤', async ({ page }) => {
+      test.slow() // 두 시나리오의 모든 단계에서 axe를 돌리므로 기본 30초에 가깝다
+      await page.goto(CONCEPT_PATH)
+      await waitForHydration(page)
+      const region = page.getByRole('region', { name: SIMULATOR_NAME })
+      for (const scenario of ['JSX와 createElement', '중첩된 JSX']) {
+        await region.getByRole('radio', { name: scenario }).check()
+        const next = region.getByRole('button', { name: '다음' })
+        // 중첩 element 카드, 호출 기록, #root 표시 등 단계마다 달라지는 표시를 모두 검사한다.
+        // 두 시나리오 모두 7단계다. 마지막 단계에서는 다음이 aria-disabled가 된다.
+        for (let i = 0; i < 6; i++) {
+          await next.click()
+          await expectNoSeriousViolations(page)
+        }
+        await expect(next).toHaveAttribute('aria-disabled', 'true')
+      }
+    })
+
+    test('개념 페이지: 퀴즈 정답을 공개한 뒤', async ({ page }) => {
+      await page.goto(CONCEPT_PATH)
+      await waitForHydration(page)
+      const quiz = page.getByRole('group', { name: /예제 1의 출력/ })
+      await quiz.getByRole('radio').nth(1).check() // 오답 표시(✗)까지 검사
+      await quiz.locator('..').getByRole('button', { name: '정답 확인' }).click()
+      await expect(page.getByText('오답입니다. 정답은 1번입니다.')).toBeVisible()
       await expectNoSeriousViolations(page)
     })
   })

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { filterConcepts, sortByOrder, type ConceptMeta } from './concepts'
+import {
+  filterConcepts,
+  getAdjacentConcepts,
+  getConcept,
+  listConcepts,
+  sortByOrder,
+  type ConceptMeta,
+} from './concepts'
 
 function stub(overrides: Partial<ConceptMeta>): ConceptMeta {
   return {
@@ -59,6 +66,23 @@ describe('filterConcepts', () => {
   })
 })
 
+describe('listConcepts / getConcept', () => {
+  it('제목의 한국어 정렬 순서로 정렬해 돌려준다', () => {
+    const titles = listConcepts().map((c) => c.title)
+    expect(titles.length).toBeGreaterThan(0)
+    expect(titles).toEqual([...titles].sort((a, b) => a.localeCompare(b, 'ko')))
+  })
+
+  it('슬러그로 개념을 찾는다', () => {
+    const first = listConcepts()[0]
+    expect(getConcept(first.slug)).toBe(first)
+  })
+
+  it('없는 슬러그는 오류를 던진다', () => {
+    expect(() => getConcept('no-such-concept')).toThrow('개념을 찾을 수 없습니다: no-such-concept')
+  })
+})
+
 describe('sortByOrder', () => {
   it('order 오름차순으로 정렬한 새 배열을 돌려주고 입력 배열은 바꾸지 않는다', () => {
     const a = stub({ slug: 'a', order: 30 })
@@ -69,5 +93,37 @@ describe('sortByOrder', () => {
     expect(sorted.map((x) => x.slug)).toEqual(['b', 'c', 'a'])
     expect(sorted).not.toBe(input)
     expect(input.map((x) => x.slug)).toEqual(['a', 'b', 'c'])
+  })
+})
+
+describe('getAdjacentConcepts', () => {
+  const ordered = sortByOrder(listConcepts())
+
+  it('모든 개념의 prev·next·position·total이 정렬 순서와 일치한다', () => {
+    ordered.forEach((concept, i) => {
+      const adj = getAdjacentConcepts(concept.slug)
+      expect(adj.prev).toBe(ordered[i - 1] ?? null)
+      expect(adj.next).toBe(ordered[i + 1] ?? null)
+      expect(adj.position).toBe(i + 1)
+      expect(adj.total).toBe(ordered.length)
+    })
+  })
+
+  it('첫 개념은 이전이 없고 position은 1이다', () => {
+    const adj = getAdjacentConcepts(ordered[0].slug)
+    expect(adj.prev).toBeNull()
+    expect(adj.position).toBe(1)
+  })
+
+  it('마지막 개념은 다음이 없고 position은 total이다', () => {
+    const adj = getAdjacentConcepts(ordered[ordered.length - 1].slug)
+    expect(adj.next).toBeNull()
+    expect(adj.position).toBe(adj.total)
+  })
+
+  it('없는 슬러그는 오류를 던진다', () => {
+    expect(() => getAdjacentConcepts('no-such-concept')).toThrow(
+      '개념을 찾을 수 없습니다: no-such-concept',
+    )
   })
 })

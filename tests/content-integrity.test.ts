@@ -26,6 +26,10 @@ const JS_SITE_HOST = 'js-under-the-hood-kappa.vercel.app'
 const REQUIRED_H2 = ['동작 원리', '예제', '결과와 이유']
 
 describe('개념 폴더', () => {
+  it('개념이 하나 이상 있다', () => {
+    expect(entries.length).toBeGreaterThan(0)
+  })
+
   // 레지스트리(import.meta.glob)가 옛 파일 목록에 얼어붙으면 새 개념이 조용히 검사에서 빠진다
   it('레지스트리의 개념 수가 app/concepts의 폴더 수와 같다', () => {
     expect(listConcepts()).toHaveLength(folders.length)
