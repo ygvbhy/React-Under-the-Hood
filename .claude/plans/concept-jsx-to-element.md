@@ -379,7 +379,7 @@
 - Critical·High 0건이다. Low 2건은 고치지 않고 남겼다(아래 후속 작업). 단순화 목록의 버전 한정 Low는 검토 의견 반영 때 해소됐다.
 
 ### 후속 작업
-- [ ] (선택) `public/favicon.svg`와 OG 이미지(`npm run og:generate`)를 새 강조색에 맞출지 결정
+- [x] `public/favicon.svg`와 OG 이미지를 새 강조색에 맞춤(2026-11-03, 사용자 요청): 파비콘 배경 #08799d·기호 #ffffff, `npm run og:generate`로 재생성(스크립트가 app.css 라이트 토큰을 읽음). format:check·test:build 26 통과
 - [ ] (선택) navigation e2e의 검색어 `객체`는 일치하는 개념이 1개 이상이라고 가정한다. 개념 구성이 바뀌어 0개가 되면 검색어를 바꾼다
 - [ ] 로드맵 2번 "렌더링은 컴포넌트 함수를 호출하는 것" 작성(이 페이지가 렌더 과정을 그 개념으로 넘김)
 
