@@ -2,7 +2,7 @@
 
 - 상태: 완료
 - 작성일: 2026-11-02
-- 기준: git 저장소 아님(빈 폴더). 뼈대 출처: `github.com/ygvbhy/JS-Under-the-Hood` @ `980716b` (스크래치패드 클론 `/private/tmp/claude-502/-Users-samg-Documents-programming-React-under-the-Hood/49a5307d-6824-4386-bf60-88d1dcf81646/scratchpad/jsuth`)
+- 기준: git 저장소 아님(빈 폴더). 뼈대 출처: `github.com/ygvbhy/JS-Under-the-Hood` @ `980716b` (스크래치패드에 클론해 사용)
 
 ## 0. 요약
 - 목적: JS Under the Hood 뼈대를 가져와 React 19.3.1 학습 사이트의 기반(React 예제 실행기, JS 사이트 링크, 메타 확장, 로드맵)을 만든다.
@@ -291,7 +291,7 @@ React 18 차이 후보(작성 시 릴리스 노트로 확인): 1(element의 `ref
 ### 후속 작업
 
 - [x] 첫 개념(로드맵 1번 JSX) 작성 (2026-11-03, `.claude/plans/concept-jsx-to-element.md`) — "작업 5 삭제 목록"의 개념 페이지 테스트를 그 개념 기준으로 다시 추가하고 `skipIf` 제거
-- [ ] 배포 도메인이 정해지면 `.env`·`app/lib/site.ts`·`scripts/postbuild.mjs` 기본 URL 갱신, Vercel 연결
+- [x] (2026-11-03, 도메인 `https://react-under-the-hood.vercel.app`) 배포 도메인이 정해지면 `.env`·`app/lib/site.ts`·`scripts/postbuild.mjs` 기본 URL 갱신, Vercel 연결
 - [ ] JS 사이트에 이벤트 루프 개념이 생기면 13번(`useEffect`) 링크 연결
 - [ ] (선택) Low 3건 정리, Sandpack 도입 검토(의존성 승인 필요)
 

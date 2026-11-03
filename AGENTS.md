@@ -27,7 +27,7 @@ React 코드가 "왜 그렇게 동작하는지"를 시각적으로 확인하고 
 - React 버전: `package.json`의 `react`·`react-dom` 버전이 기준 버전이다. 바꾸려면 사용자 승인을 받고, 내부 구현 페이지를 다시 검토한다.
 - React 18과 달라진 점은 `<Callout type="react18">`로 표시한다. 차이는 릴리스 노트·업그레이드 가이드로 확인한 것만 쓴다.
 - JS 사이트 링크: 선행 개념은 `meta.jsPrerequisites`, 본문은 `<JsLink>`만 쓴다. 본문에 JS 사이트 URL을 직접 쓰지 않는다(테스트가 막는다). 링크를 추가·수정하기 전에 `npm run js-index:sync`로 인덱스(`app/lib/js-site-index.json`)를 갱신한다.
-- 의존성은 근거를 제시하고 사용자 승인을 받은 뒤에만 추가한다. 패키지 버전은 정확히 고정한다(`npm install --save-exact`, `package.json`에 `^`·`~` 금지). 예: 마크다운 표(GFM)를 위해 `remark-gfm`을 넣는 대신 표는 JSX `<table>`로 쓴다. `serve@14.2.6`이 고정한 취약 `compression`(GHSA-vc2v-76pw-4v95)은 `package.json` `overrides`로 1.8.2에 고정했다. `serve`가 고친 버전을 내면 override를 제거한다.
+- 의존성은 근거를 제시하고 사용자 승인을 받은 뒤에만 추가한다. 패키지 버전은 정확히 고정한다(`npm install --save-exact`, `package.json`에 `^`·`~` 금지). 예: 마크다운 표(GFM)를 위해 `remark-gfm`을 넣는 대신 표는 JSX `<table>`로 쓴다. `serve@14.2.6`이 고정한 취약 `compression`(GHSA-vc2v-76pw-4v95)은 `package.json` `overrides`로 1.8.2에 고정했다. `serve`가 고친 버전을 내면 override를 제거한다. `npm audit`의 moderate `minimatch <11.0.1`(GHSA-g3hv-75wg-m249)은 `eslint`·`typescript-eslint`가 쓰는 개발 전용 의존성이고 저장소가 정한 glob만 처리하므로 수용한다(운영 의존성 audit은 0건). `npm audit fix --force`는 `typescript-eslint`를 내리므로 쓰지 않는다. 두 패키지가 minimatch 11.0.1 이상을 쓰는 버전을 내면 업데이트로 해소한다.
 - 계획 문서는 `.claude/plans/`에 둔다. 구현 중 사실과 결정은 해당 계획 문서의 "구현 진행"에 기록한다.
 - 커밋은 사용자가 요청했을 때만 한다.
 - Claude가 만든 커밋은 메시지 끝에 `Co-Authored-By: Claude <모델명> <noreply@anthropic.com>`(예: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`)을 넣는다. GitHub이 이 줄로 Claude를 공동 작성자로 표시한다.
@@ -128,7 +128,7 @@ npx playwright test tests/e2e/navigation.spec.ts tests/e2e/react-examples.spec.t
 
 ## 배포
 
-- Vercel 정적 배포. 설정은 `vercel.json`(`framework: null`, `npm ci`, `npm run build`, 출력 `build/client`, `trailingSlash: false`, `/assets/*` immutable 캐시, 모든 경로에 `X-Content-Type-Options: nosniff`·`Referrer-Policy: strict-origin-when-cross-origin`·`X-Frame-Options: DENY`)이 정한다. main = Production, PR = Preview.
-- 사이트 URL(canonical·og:url·sitemap)은 `VITE_SITE_URL` 환경변수로 정한다. 기본값은 커밋된 `.env`에 있고(배포 도메인이 정해지기 전에는 `http://localhost:4173`), 배포 도메인은 Vercel Production 환경변수로 덮어쓴다(셸·플랫폼 환경변수가 `.env`보다 우선). 도메인이 정해지면 `.env`, `app/lib/site.ts`, `scripts/postbuild.mjs`의 기본 URL을 함께 갱신한다. 로컬에서 다른 값을 쓰려면 `VITE_SITE_URL=... npm run build`처럼 셸 변수로 지정한다(앱 코드와 `postbuild.mjs`가 같은 값을 보도록 `.env.local`이 아니라 `.env` 또는 셸 변수를 쓴다).
+- Vercel 정적 배포. 설정은 `vercel.json`(`framework: null`, `npm ci`, `npm run build`, 출력 `build/client`, `trailingSlash: false`, `/assets/*` immutable 캐시, 모든 경로에 `X-Content-Type-Options: nosniff`·`Referrer-Policy: strict-origin-when-cross-origin`·`X-Frame-Options: DENY`, 스크립트를 제한하지 않는 최소 CSP `object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'`, `Permissions-Policy`로 카메라·마이크·위치·결제·USB 차단)이 정한다. 인라인 스크립트 hash를 쓰는 완전한 CSP는 사용자 입력·인증·외부 스크립트가 없어 넣지 않았다. 그런 기능이 생기면 다시 판단한다. main = Production, PR = Preview.
+- 사이트 URL(canonical·og:url·sitemap)은 `VITE_SITE_URL` 환경변수로 정한다. 기본값은 커밋된 `.env`의 배포 도메인 `https://react-under-the-hood.vercel.app`이다. Vercel 환경변수나 셸 변수로 덮어쓸 수 있다(셸·플랫폼 환경변수가 `.env`보다 우선). 도메인이 바뀌면 `.env`, `app/lib/site.ts`, `scripts/postbuild.mjs`의 기본 URL을 함께 갱신한다. 로컬에서 다른 값을 쓰려면 `VITE_SITE_URL=... npm run build`처럼 셸 변수로 지정한다(앱 코드와 `postbuild.mjs`가 같은 값을 보도록 `.env.local`이 아니라 `.env` 또는 셸 변수를 쓴다).
 - Node 버전: `package.json` `engines.node >= 22.22`, `.nvmrc`는 24.
 - 404: 프리렌더된 `/404`를 `404.html`로 복사해 미지 경로에 쓰고, `noindex`를 둔다. 모든 경로가 프리렌더되므로 `__spa-fallback.html`은 빌드 후 삭제한다.
