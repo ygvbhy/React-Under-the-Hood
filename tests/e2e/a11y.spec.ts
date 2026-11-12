@@ -1,6 +1,12 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { CONCEPT_PATH, SIMULATOR_NAME, waitForHydration } from './helpers'
+import {
+  CONCEPT_PATH,
+  RENDER_COMMIT_PATH,
+  RENDER_COMMIT_SIMULATOR_NAME,
+  SIMULATOR_NAME,
+  waitForHydration,
+} from './helpers'
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
@@ -64,6 +70,27 @@ for (const colorScheme of ['light', 'dark'] as const) {
         // 중첩 element 카드, 호출 기록, #root 표시 등 단계마다 달라지는 표시를 모두 검사한다.
         // 두 시나리오 모두 7단계다. 마지막 단계에서는 다음이 aria-disabled가 된다.
         for (let i = 0; i < 6; i++) {
+          await next.click()
+          await expectNoSeriousViolations(page)
+        }
+        await expect(next).toHaveAttribute('aria-disabled', 'true')
+      }
+    })
+
+    test('render-and-commit: 시뮬레이터를 진행한 뒤', async ({ page }) => {
+      test.slow() // 두 시나리오의 모든 단계에서 axe를 돌린다
+      await page.goto(RENDER_COMMIT_PATH)
+      await waitForHydration(page)
+      const region = page.getByRole('region', { name: RENDER_COMMIT_SIMULATOR_NAME })
+      const scenarios: [string, number][] = [
+        ['state 업데이트', 10],
+        ['DOM 변경 없는 다시 렌더', 11],
+      ]
+      for (const [scenario, steps] of scenarios) {
+        await region.getByRole('radio', { name: scenario }).check()
+        const next = region.getByRole('button', { name: '다음' })
+        // 마지막 단계에서는 다음이 aria-disabled가 되므로 단계 수 - 1번 누른다
+        for (let i = 0; i < steps - 1; i++) {
           await next.click()
           await expectNoSeriousViolations(page)
         }

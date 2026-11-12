@@ -7,6 +7,9 @@ import type { ConceptMeta } from '~/lib/concepts'
 // 첫 개념(참고 구현)의 경로와 시뮬레이터 영역 이름
 export const CONCEPT_PATH = '/concepts/jsx-to-element'
 export const SIMULATOR_NAME = 'JSX element 시뮬레이터'
+// 두 번째 개념(render-and-commit) 페이지와 시뮬레이터 영역 이름
+export const RENDER_COMMIT_PATH = '/concepts/render-and-commit'
+export const RENDER_COMMIT_SIMULATOR_NAME = '렌더와 커밋 시뮬레이터'
 
 // 404 문서 자체를 받을 때 브라우저가 남기는 리소스 로드 로그. 앱 오류가 아니므로 무시한다.
 const IGNORED_404_LOG = /Failed to load resource: the server responded with a status of 404/

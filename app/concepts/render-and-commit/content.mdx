@@ -1,0 +1,160 @@
+import { Simulator } from './Simulator'
+import { scenarios } from './scenarios'
+
+버튼을 누르거나 처음 페이지를 열면 화면이 바뀝니다. 이 글은 그 사이에 React가 하는 일을 트리거(trigger), 렌더(render), 커밋(commit) 세 단계로 나누고, 단계마다 무엇이 일어나는지 실행 결과로 확인합니다. 컴포넌트 함수가 언제 호출되는지, 그리고 DOM이 언제 바뀌는지를 따로 떼어 봅니다.
+
+컴포넌트가 함수라는 것은 <JsLink slug="function-calls">함수 호출</JsLink>을 전제합니다. 예제의 관찰 코드는 바뀐 노드가 텍스트인지 요소인지를 구분하는데, 이는 <JsLink slug="dom-tree-nodes" anchor="노드-종류와-nodetype-nodename">DOM 노드 종류</JsLink>에서 본 것과 같습니다.
+
+## 동작 원리
+
+화면이 갱신되는 과정은 세 단계입니다.
+
+1. **트리거(trigger)**: 렌더를 요청하는 일입니다. 이 글에서는 두 가지를 다룹니다. 하나는 `createRoot`로 만든 root에 `render`를 처음 호출하는 첫 렌더이고, 다른 하나는 컴포넌트의 state를 바꾸는 state 업데이트입니다. `createRoot`로 만든 root의 `render(...)`는 동기적이지 않아서 호출한 그 자리에서 렌더하지 않습니다. `flushSync`로 감싸지 않는 한, 호출한 바로 다음 줄에서는 아직 렌더 결과가 화면에 없습니다.
+2. **렌더(render)**: React가 컴포넌트 함수를 호출하는 단계입니다. 첫 렌더에서는 루트 컴포넌트부터 호출하고, 돌려준 JSX 안에 다른 컴포넌트가 있으면 이어서 호출합니다. state 업데이트로 다시 렌더(re-render)할 때는 그 state를 가진 컴포넌트를 호출하고, 그 컴포넌트가 돌려준 JSX 안에 컴포넌트가 있으면 첫 렌더와 마찬가지로 이어서 호출합니다. 이 단계에서는 화면에 있는 DOM(`#root` 안)을 바꾸지 않습니다.
+3. **커밋(commit)**: 렌더 결과를 DOM에 반영하는 단계입니다. 첫 렌더에서는 만든 DOM 노드를 `#root`에 붙입니다. 다시 렌더한 뒤에는 이전 렌더와 달라진 DOM 노드만 바꿉니다. 그래서 다시 렌더했어도 DOM에 반영할 차이가 없다면 DOM은 바뀌지 않습니다.
+
+커밋이 끝나면 브라우저가 화면을 다시 칠합니다. React 문서는 이를 페인트(paint)라고 부릅니다. 이 글에서 "렌더"는 컴포넌트를 호출하는 React의 단계를 뜻하고, 브라우저가 화면에 그리는 페인트와는 다른 일입니다.
+
+<Callout type="note" title="예제의 관찰 코드">
+  각 예제에는 `MutationObserver`를 쓰는 8줄이 있습니다. 이는 React 기능이 아니라 DOM이 바뀌었을 때
+  알려 주는 브라우저 API입니다. 콜백은 DOM이 바뀌는 순간이 아니라 바뀐 뒤에 불리고, 이 코드는 바뀐
+  요소의 이름만 찍습니다. 또 예제 1의 <code>{'rootNode.childNodes.length'}</code>와 예제 2의{' '}
+  <code>{"rootNode.querySelector('output')"}</code>는 렌더 중에 DOM을 직접 읽습니다. 렌더 단계에서
+  화면의 DOM이 아직 그대로임을 보려는 관찰용 코드이고, 실제 컴포넌트에서는 이렇게 쓰지 않습니다.
+  이유는 "순수 함수와 StrictMode" 개념에서 다룹니다.
+</Callout>
+
+## 예제
+
+### 예제 1: 첫 렌더
+
+```jsx file=./examples/first-render.jsx
+
+```
+
+<PredictQuiz
+  question="예제 1 출력의 첫 줄은 무엇일까요?"
+  choices={[
+    'render 호출 직후, #root 자식 수: 0',
+    'App 렌더, #root 자식 수: 0',
+    'DOM 변경: ["#root"]',
+    'Title 렌더',
+  ]}
+  answer={0}
+  explanation="root.render는 호출한 그 자리에서 렌더하지 않으므로, 다음 줄의 로그가 컴포넌트 호출보다 먼저 찍힙니다."
+/>
+
+첫 줄은 `render` 바로 다음 줄의 로그입니다. 이 시점에 `#root`는 비어 있습니다(`0`). 이어서 React가 컴포넌트를 호출합니다. 루트인 `App`이 먼저 호출되고(`App 렌더`), 이 컴포넌트가 돌려준 JSX 안의 `Title`과 `Count`가 차례로 호출됩니다. `App`이 호출될 때도 `#root`는 아직 비어 있습니다. 렌더 단계에서는 화면의 DOM이 바뀌지 않기 때문입니다. 마지막 줄 `DOM 변경: ["#root"]`는 커밋에서 `#root` 안에 노드가 붙었다는 관찰입니다.
+
+### 예제 2: state 업데이트로 다시 렌더
+
+```jsx file=./examples/state-update.jsx
+
+```
+
+<PredictQuiz
+  question="버튼을 누른 뒤 새로 찍히는 렌더 줄은 무엇일까요?"
+  choices={[
+    'Counter 렌더 줄만',
+    'App, Title, Counter 렌더 줄 모두',
+    'App과 Counter 렌더 줄',
+    '렌더 줄은 찍히지 않는다',
+  ]}
+  answer={0}
+  explanation="state 업데이트는 그 state를 가진 Counter를 다시 호출합니다. App과 Title은 Counter가 돌려준 JSX 안에 있지 않으므로 호출되지 않고(마지막 두 줄에 App 렌더와 Title 렌더가 없음), Counter는 자식 컴포넌트가 없어서 이어서 호출할 컴포넌트도 없습니다."
+/>
+
+첫 네 줄은 첫 렌더입니다. `App`, `Title`, `Counter`가 호출되고, `Counter`가 렌더되는 동안 화면에는 `output`이 아직 없습니다(`화면 없음`). 커밋 뒤 `DOM 변경: ["#root"]`가 찍힙니다.
+
+버튼을 누르면 `setCount`가 트리거가 되어 `Counter 렌더: count 1`이 찍힙니다. 이번에는 `App 렌더`와 `Title 렌더`가 없습니다. 다시 렌더할 때는 그 state를 가진 `Counter`를 호출합니다. `App`과 `Title`은 `Counter`가 돌려준 JSX 안에 있지 않으므로 호출되지 않고, `Counter`는 자식 컴포넌트가 없어서 이어서 호출할 컴포넌트도 없습니다. 이 렌더 중에 읽은 화면의 `output`은 아직 `0`입니다. 렌더가 끝나고 커밋되어서야 `DOM 변경: ["output"]`이 찍힙니다. `h1`과 `button`은 바뀌지 않았고 `output`만 바뀐 곳으로 보고되었습니다.
+
+### 시뮬레이터로 확인하기
+
+예제 2와 예제 3을 한 단계씩 진행하면서 지금이 트리거·렌더·커밋 중 어느 단계인지, 이번 렌더에서 어떤 컴포넌트가 호출되었는지, `#root`의 DOM이 언제 바뀌는지 봅니다. 렌더 단계에서는 DOM 줄에 "바뀜" 표시가 붙지 않고, 커밋 단계에서만 붙습니다.
+
+<Simulator scenarios={scenarios} />
+
+### 예제 3: 다시 렌더했지만 DOM에 반영할 차이가 없을 때
+
+```jsx file=./examples/same-result.jsx
+
+```
+
+<PredictQuiz
+  question="두 번째 클릭 뒤에 찍히는 DOM 변경 줄은 무엇일까요?"
+  choices={['찍히지 않는다', 'DOM 변경: ["p"]', 'DOM 변경: ["#root"]', 'DOM 변경: ["p","button"]']}
+  answer={0}
+  explanation="두 번째 클릭 뒤에는 Status 렌더: clicks 2만 찍히고 DOM 변경 줄은 없습니다. 다시 렌더했지만 이전 렌더와 비교해 DOM에 반영할 차이가 없어서 커밋에서 바꿀 DOM이 없었습니다."
+/>
+
+첫 클릭에서는 `clicks`가 1이 되어 `p`의 글이 `아직 안 눌렀어요`에서 `눌렀어요`로 달라지므로 `Status 렌더: clicks 1` 뒤에 `DOM 변경: ["p"]`가 찍힙니다. 두 번째 클릭에서는 `Status 렌더: clicks 2`가 찍히지만 `p`의 글은 그대로 `눌렀어요`입니다. 컴포넌트는 다시 호출되었지만(렌더) 이전 렌더와 비교해 DOM에 반영할 차이가 없어서 커밋에서 DOM을 바꾸지 않았고, 관찰 코드도 아무것도 찍지 않았습니다.
+
+## 결과와 이유
+
+화면 갱신은 트리거, 렌더, 커밋 순서로 진행됩니다. 컴포넌트 함수가 호출되는 것은 렌더이고, DOM이 바뀌는 것은 커밋입니다. 렌더가 일어났다고 해서 DOM이 바뀌는 것은 아닙니다.
+
+<div className="my-6 overflow-x-auto">
+  <table>
+    <thead>
+      <tr>
+        <th>단계</th>
+        <th>무엇이 일어나나</th>
+        <th>확인한 출력</th>
+        <th>예제</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>트리거(첫 렌더)</td>
+        <td>
+          root에 <code>render</code>를 처음 호출해 렌더를 요청합니다. 호출한 그 자리에서 렌더하지
+          않습니다.
+        </td>
+        <td>
+          <code>render 호출 직후, #root 자식 수: 0</code>이 가장 먼저 찍힙니다.
+        </td>
+        <td>예제 1</td>
+      </tr>
+      <tr>
+        <td>트리거(state 업데이트)</td>
+        <td>
+          <code>setCount</code> 같은 state 업데이트가 다시 렌더를 요청합니다.
+        </td>
+        <td>
+          클릭 뒤 <code>Counter 렌더: count 1</code>이 찍힙니다.
+        </td>
+        <td>예제 2</td>
+      </tr>
+      <tr>
+        <td>렌더</td>
+        <td>React가 컴포넌트 함수를 호출합니다. 화면의 DOM은 아직 바뀌지 않습니다.</td>
+        <td>
+          <code>App 렌더, #root 자식 수: 0</code>, <code>Counter 렌더: count 1, 화면 0</code>
+        </td>
+        <td>예제 1·2</td>
+      </tr>
+      <tr>
+        <td>커밋</td>
+        <td>렌더 결과를 DOM에 반영합니다. 첫 렌더는 붙이고, 다시 렌더는 달라진 곳만 바꿉니다.</td>
+        <td>
+          <code>DOM 변경: ["#root"]</code>, <code>DOM 변경: ["output"]</code>
+        </td>
+        <td>예제 1·2</td>
+      </tr>
+      <tr>
+        <td>DOM에 반영할 차이가 없는 다시 렌더</td>
+        <td>컴포넌트는 호출되지만 바꿀 DOM이 없습니다.</td>
+        <td>
+          <code>Status 렌더: clicks 2</code> 뒤에 <code>DOM 변경</code> 줄이 없습니다.
+        </td>
+        <td>예제 3</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<Callout type="misconception" title="다시 렌더하면 화면 전체를 다시 그린다">
+  다시 렌더한다는 것은 컴포넌트 함수를 다시 호출한다는 뜻이지 DOM을 모두 새로 만든다는 뜻이
+  아닙니다. 예제 2에서는 `output`만 바뀐 곳으로 보고되었고, 예제 3에서는 컴포넌트가 다시
+  호출되었는데도 바뀐 DOM이 없었습니다.
+</Callout>
