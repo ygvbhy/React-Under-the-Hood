@@ -2,6 +2,8 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import {
   CONCEPT_PATH,
+  PURE_STRICT_PATH,
+  PURE_STRICT_SIMULATOR_NAME,
   RENDER_COMMIT_PATH,
   RENDER_COMMIT_SIMULATOR_NAME,
   SIMULATOR_NAME,
@@ -85,6 +87,27 @@ for (const colorScheme of ['light', 'dark'] as const) {
       const scenarios: [string, number][] = [
         ['state 업데이트', 10],
         ['DOM 변경 없는 다시 렌더', 11],
+      ]
+      for (const [scenario, steps] of scenarios) {
+        await region.getByRole('radio', { name: scenario }).check()
+        const next = region.getByRole('button', { name: '다음' })
+        // 마지막 단계에서는 다음이 aria-disabled가 되므로 단계 수 - 1번 누른다
+        for (let i = 0; i < steps - 1; i++) {
+          await next.click()
+          await expectNoSeriousViolations(page)
+        }
+        await expect(next).toHaveAttribute('aria-disabled', 'true')
+      }
+    })
+
+    test('pure-and-strict-mode: 시뮬레이터를 진행한 뒤', async ({ page }) => {
+      test.slow() // 두 시나리오의 모든 단계에서 axe를 돌린다
+      await page.goto(PURE_STRICT_PATH)
+      await waitForHydration(page)
+      const region = page.getByRole('region', { name: PURE_STRICT_SIMULATOR_NAME })
+      const scenarios: [string, number][] = [
+        ['바깥 변수를 바꾸는 Ticket', 10],
+        ['props만 쓰는 Ticket', 10],
       ]
       for (const [scenario, steps] of scenarios) {
         await region.getByRole('radio', { name: scenario }).check()

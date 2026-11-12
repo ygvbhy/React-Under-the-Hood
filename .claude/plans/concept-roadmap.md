@@ -1,6 +1,6 @@
 # 개념 로드맵
 
-- 상태: 확정 · 작성 중 (1번 작성 2026-11-03, 2번 작성 2026-11-12, JS 연결 후보 갱신 2026-11-12: JS 사이트 56개 개념 기준)
+- 상태: 확정 · 작성 중 (1번 작성 2026-11-03, 2번 작성 2026-11-12, 3번 작성 2026-11-12, JS 연결 후보 갱신 2026-11-12: JS 사이트 56개 개념 기준)
 - 작성일: 2026-11-02
 - 근거: 2026-11-02 사용자 확정 (`.claude/plans/react-uth-initial-setup.md` 부록 A)
 
@@ -18,7 +18,7 @@
 | --- | ---------------------------------------------------------- | -------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
 | 1   | JSX는 함수 호출이다: element는 그냥 객체                   | `rendering`    | 10    | 확정: `function-calls`, `primitives-and-objects`                                                                               | 있음: ref가 `element.ref`에서 `props.ref`로 (업그레이드 가이드) |
 | 2   | 렌더링은 컴포넌트 함수를 호출하는 것: 트리거 → 렌더 → 커밋 | `rendering`    | 20    | 확정: `function-calls`, `dom-tree-nodes`                                                                                       | -                                                               |
-| 3   | 순수 함수와 StrictMode: 왜 두 번 실행될까                  | `rendering`    | 30    | -                                                                                                                              | 작성 시 확인 (StrictMode 두 번째 렌더의 메모이제이션 재사용)    |
+| 3   | 순수 함수와 StrictMode: 왜 두 번 실행될까                  | `rendering`    | 30    | 확정: `function-calls`, `scope-chain` | 있음: 두 번째 렌더에서 useMemo·useCallback 결과 재사용, 마운트 때 ref 콜백 두 번 호출 (업그레이드 가이드) |
 | 4   | props는 읽기 전용이다                                      | `rendering`    | 40    | 후보(개념 작성 시 확정): `primitives-and-objects`, `property-attributes`, `spread-destructuring`, `default-parameters`         | -                                                               |
 | 5   | state는 스냅샷이다: setState 직후 값이 그대로인 이유       | `state`        | 50    | 후보(개념 작성 시 확정): `closure`                                                                                             | -                                                               |
 | 6   | 배칭과 함수형 업데이트: `setCount(c => c + 1)`             | `state`        | 60    | 후보(개념 작성 시 확정): `arrow-functions`                                                                                     | -                                                               |

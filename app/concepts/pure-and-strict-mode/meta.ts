@@ -1,0 +1,137 @@
+import type { ConceptMeta } from '~/lib/concepts'
+
+export const concept = {
+  slug: 'pure-and-strict-mode',
+  title: '순수 함수와 StrictMode: 왜 두 번 실행될까',
+  summary:
+    'React는 컴포넌트를 순수 함수로 가정합니다. StrictMode는 개발 중에 컴포넌트를 두 번 호출해, 호출 횟수에 따라 결과가 달라지는 순수하지 않은 컴포넌트를 드러냅니다.',
+  category: 'rendering',
+  order: 30,
+  tags: [
+    'StrictMode',
+    'Strict Mode',
+    '엄격 모드',
+    '순수 함수',
+    '순수성',
+    'pure',
+    '부수 효과',
+    'side effect',
+    '두 번 호출',
+    '두 번 렌더',
+    'double render',
+    '개발 모드',
+    '개발 빌드',
+    'useState 초기값',
+    '지역 변경',
+  ],
+  goals: [
+    '순수한 컴포넌트의 조건(같은 입력이면 같은 결과, 렌더 전부터 있던 값을 바꾸지 않음)을 말할 수 있다',
+    'StrictMode가 개발 중에 무엇을 두 번 호출하고 무엇은 한 번만 호출하는지 설명할 수 있다',
+    '렌더 중에 바깥 변수를 바꾸는 컴포넌트를 찾아 props로 고칠 수 있다',
+  ],
+  prerequisites: [{ label: '렌더링은 컴포넌트 함수를 호출하는 것', slug: 'render-and-commit' }],
+  jsPrerequisites: [
+    { label: '함수 호출', slug: 'function-calls' },
+    {
+      label: '스코프 체인: 바깥 변수를 찾는 순서',
+      slug: 'scope-chain',
+      anchor: '이름을-찾는-순서',
+    },
+  ],
+  related: ['render-and-commit', 'jsx-to-element'],
+  examples: [
+    {
+      id: 'impure-ticket',
+      file: 'impure-ticket.jsx',
+      runtime: 'react-dom',
+      expectedOutput: [
+        'Ticket 렌더: 번호표 1',
+        'Ticket 렌더: 번호표 2',
+        'Ticket 렌더: 번호표 3',
+        '화면: ["번호표 1","번호표 2","번호표 3"]',
+      ],
+    },
+    {
+      id: 'impure-ticket-strict',
+      file: 'impure-ticket-strict.jsx',
+      runtime: 'react-dom',
+      expectedOutput: [
+        'Ticket 렌더: 번호표 1',
+        'Ticket 렌더: 번호표 2',
+        'Ticket 렌더: 번호표 3',
+        'Ticket 렌더: 번호표 4',
+        'Ticket 렌더: 번호표 5',
+        'Ticket 렌더: 번호표 6',
+        '화면: ["번호표 2","번호표 4","번호표 6"]',
+      ],
+    },
+    {
+      id: 'pure-ticket-strict',
+      file: 'pure-ticket-strict.jsx',
+      runtime: 'react-dom',
+      expectedOutput: [
+        'Ticket 렌더: 번호표 1',
+        'Ticket 렌더: 번호표 1',
+        'Ticket 렌더: 번호표 2',
+        'Ticket 렌더: 번호표 2',
+        'Ticket 렌더: 번호표 3',
+        'Ticket 렌더: 번호표 3',
+        '화면: ["번호표 1","번호표 2","번호표 3"]',
+      ],
+    },
+    {
+      id: 'what-runs-twice',
+      file: 'what-runs-twice.jsx',
+      runtime: 'react-dom',
+      interactions: [{ type: 'click', selector: 'button' }],
+      expectedOutput: [
+        'Counter 본문',
+        '초기값 함수',
+        '초기값 함수',
+        'Counter 본문',
+        '클릭 핸들러',
+        'Counter 본문',
+        'Counter 본문',
+      ],
+    },
+  ],
+  simplifications: [
+    '예제는 개발 빌드에서 실행합니다. react.dev에 따르면 StrictMode의 검사는 개발 중에만 동작하고 프로덕션 빌드에서는 컴포넌트를 두 번 호출하지 않습니다. 프로덕션 동작은 예제로 확인하지 않았습니다.',
+    'StrictMode가 effect와 ref 콜백을 한 번 더 실행하는 동작은 "useEffect 실행 시점과 cleanup"과 "ref" 개념에서 다룹니다. 사용 중단 API 검사와 트리 일부만 StrictMode로 감싸는 경우는 다루지 않습니다. 예제에는 effect와 ref가 없습니다.',
+    '두 번 호출 대상 중 set 함수에 넘긴 업데이트 함수, useMemo와 useReducer에 넘긴 함수는 예제로 보이지 않습니다.',
+    'React가 두 호출 중 어느 결과를 화면에 쓰는지는 react.dev가 정하지 않습니다(useState 문서는 한쪽 결과를 무시한다고만 씁니다). 예제 2에서 화면 값이 각 Ticket의 두 번째 호출 값과 같았던 것은 이 실행의 관찰입니다. 순수한 컴포넌트라면 두 결과가 같으므로 어느 쪽을 쓰든 화면은 같습니다.',
+    '한 Ticket을 연달아 두 번 호출한 순서와 예제 4의 로그 순서(Counter 본문 → 초기값 함수 → 초기값 함수 → Counter 본문)는 React 19.3.1에서 실행한 관찰이며 react.dev가 정한 것이 아닙니다. 버전에 따라 다를 수 있습니다.',
+    'StrictMode는 두 호출 결과가 달라도 경고하지 않았습니다(예제 2에서 경고 없음). 시뮬레이터의 "두 결과 같음/다름" 배지는 돌려준 JSX의 요약 글을 비교하는 교육용 표시이며 React가 하는 일이 아닙니다. 실제로는 호출할 때마다 새 element 객체가 만들어집니다.',
+    '렌더 중에 읽는 입력은 props와 state만 다뤘습니다. react.dev는 context도 입력으로 꼽습니다. 두 번 호출 대상에는 일부 클래스 컴포넌트 메서드도 있지만 이 사이트는 함수 컴포넌트만 다룹니다.',
+    'React DevTools를 설치하면 두 번째 호출의 console.log가 흐리게 보이고, 완전히 숨기는 설정도 있습니다(react.dev). 이 사이트의 예제 실행기는 모든 console.log를 그대로 기록합니다.',
+    '예제 1·2의 모듈 변수 nextNumber는 순수하지 않은 컴포넌트를 보이려고 일부러 쓴 코드입니다.',
+    '관찰 코드(MutationObserver)는 DOM이 바뀐 뒤에 화면의 번호표를 찍습니다. 시뮬레이터는 render 호출과 컴포넌트 호출을 단계로 나눠 보이지만 컴포넌트 호출은 render 줄에서 바로 일어나지 않으며("렌더링은 컴포넌트 함수를 호출하는 것" 개념), 커밋은 한 단계로 묶었습니다. 바깥 변수 상자·호출 기록·화면 상자는 교육용 그림이며 React 내부 자료구조가 아닙니다.',
+  ],
+  references: [
+    {
+      label: 'React 문서: StrictMode (두 번 렌더로 찾은 버그 고치기)',
+      url: 'https://react.dev/reference/react/StrictMode#fixing-bugs-found-by-double-rendering-in-development',
+    },
+    {
+      label: 'React 문서: 컴포넌트를 순수하게 유지하기 (Keeping Components Pure)',
+      url: 'https://react.dev/learn/keeping-components-pure',
+    },
+    {
+      label: 'React 문서: useState 주의사항 (초기값 함수를 두 번 호출)',
+      url: 'https://react.dev/reference/react/useState#caveats',
+    },
+    {
+      label: 'React 문서: memo (props가 같을 때 다시 렌더 건너뛰기)',
+      url: 'https://react.dev/reference/react/memo',
+    },
+    {
+      label: 'React 19 업그레이드 가이드: StrictMode 변경',
+      url: 'https://react.dev/blog/2024/04/25/react-19-upgrade-guide#strict-mode-improvements',
+    },
+    {
+      label: 'MDN: MutationObserver (관찰 코드)',
+      url: 'https://developer.mozilla.org/ko/docs/Web/API/MutationObserver',
+    },
+  ],
+  reviewedAt: '2026-11-12',
+} satisfies ConceptMeta
