@@ -33,7 +33,7 @@ test.describe('개념 상세', () => {
     ).toBeVisible()
     // reviewedAt을 기록했으므로 '검토 중' 대신 검토일 배지를 보여 준다
     await expect(page.locator('article > header').getByText(/^검토일/)).toHaveText(
-      '검토일 2026-11-03',
+      '검토일 2026-11-12',
     )
     await expect(page.getByRole('heading', { level: 2, name: '학습 목표' })).toBeVisible()
 

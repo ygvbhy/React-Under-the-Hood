@@ -86,7 +86,7 @@ const objectScenario: Scenario<ElementSimState> = {
     {
       title: 'render: React가 Greeting을 호출',
       explanation:
-        'render에 fromJsx를 넘기면 React가 그 element를 렌더하면서 Greeting을 한 번 호출합니다. 호출 과정은 한 단계로 묶어 보입니다. fromCall은 렌더하지 않았으므로 호출되지 않습니다.',
+        'render에 fromJsx를 넘기면 React가 그 element를 렌더하면서 Greeting을 한 번 호출합니다. 이 호출은 render 줄이 실행되는 그 자리에서 바로 일어나지 않으며, 시점은 "렌더링은 컴포넌트 함수를 호출하는 것"에서 다룹니다. 시뮬레이터는 그 과정을 한 단계로 묶어 보입니다. fromCall은 렌더하지 않았으므로 호출되지 않습니다.',
       line: { from: 17, to: 17 },
       state: {
         variables: vars2,

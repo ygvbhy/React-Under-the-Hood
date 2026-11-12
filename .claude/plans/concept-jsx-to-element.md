@@ -343,10 +343,68 @@
 ## 9. 추가 개선 후보
 - 초기 구축 리뷰에서 나온 Low 3건(JS 호스트 문자열 중복 등)은 이번 범위 밖이다.
 
+## 10. 사후 검토 수정 계획 (2026-11-12)
+
+- 상태: 완료 (2026-11-12)
+- 기준: `main` @ `4e6f8f0` (로드맵 2번 render-and-commit 커밋. 계획 작성 당시 커밋 전 변경이 있다고 적었으나 실제로는 이미 커밋되어 있었음 — 마무리 때 확인)
+
+### 10.0 요약
+- 목적: 외부 검토 의견 Minor 4건(JSX 변환 조건, children 규칙, 예제 3의 React 19 전용 표시, render 호출과 컴포넌트 호출의 시점)을 문구로 바로잡는다.
+- 범위: `app/concepts/jsx-to-element/`의 `content.mdx`·`meta.ts`(simplifications 2·5, reviewedAt)·`scenarios.ts`(7단계 설명 한 문장) / 예제 파일·기대 출력·시뮬레이터 상태·공통 코드는 바꾸지 않음
+- 위험: 고친 문장이 다시 확인되지 않은 사실을 단정하는 것 → 아래 10.1의 실행·문서 근거로 확인한 내용만 쓴다
+- 복잡도: 낮음 · Consensus: 생략 (한 개념 폴더의 문구 수정, 사실은 모두 메인이 실행·문서로 확인)
+- 미확정: 없음
+
+### 10.1 사실 (2026-11-12 메인 확인)
+- 지적 1 JSX 변환: 이 프로젝트의 변환기(Vite 8.3.4 `transformWithOxc`)로 확인. automatic 런타임은 `<h1>안녕, {name}</h1>` → `jsxs("h1", { children: ["안녕, ", name] })`, `<p />` → `jsx("p", {})`, `<div key="x" {...props} />` → `jsx("div", {...props}, "x")`, **`<div {...props} key="x" />` → `createElement("div", {...props, key: "x"})`**. classic 런타임은 모든 JSX가 `React.createElement`. React 19 업그레이드 가이드 "New JSX Transform is now required": 새 변환을 켜지 않으면 경고("outdated JSX transform")를 낸다고만 쓰고 실패는 언급하지 않음.
+- 지적 2 children: 19.3.1 개발 빌드에서 `'children' in createElement('p').props`와 `'children' in jsx('p', {}).props` 모두 `false`. 텍스트와 `{}` 표현식이 각각 한 자식이 되는 것은 위 oxc 변환 결과(`["안녕, ", name]`)로 확인.
+- 지적 3 React 18: 18.3.1에서 예제 3과 같은 element를 만들면 `Object.keys(props)`는 `["placeholder"]`, `props.ref === inputRef`는 `false`, 개발 빌드가 "`ref` is not a prop" 경고(스크래치 실행). 사용자 결정(2026-11-12): AGENTS.md 규칙대로 **정확한 18 출력값은 쓰지 않고**, 문서 근거(업그레이드 가이드의 `element.ref` → `element.props.ref`)로 "18에서는 ref가 props에 들어가지 않아 둘째·셋째 줄이 다르다"만 쓴다.
+- 지적 4 시점: 2번 개념 본문 `app/concepts/render-and-commit/content.mdx:12`가 react.dev를 근거로 "`root.render(...)`는 동기적이지 않아서 호출한 그 자리에서 렌더하지 않는다"고 쓴다. 1번의 `scenarios.ts:89` "render에 fromJsx를 넘기면 React가 그 element를 렌더하면서 Greeting을 한 번 호출합니다"는 같은 줄에서 호출되는 것으로 읽힌다. 본문 `content.mdx:18,43,46`과 misconception Callout은 "React가 렌더할 때", "render에 넘긴 뒤"라서 고치지 않는다.
+- 추가 확인 2건(사실로 확인, 수정 없음): react.dev "Writing Markup with JSX"의 DeepDive "Why do multiple JSX tags need to be wrapped?"에 "under the hood it is transformed into plain JavaScript objects". React 19 글 "ref as a prop"의 Note: "`ref`s passed to classes are not passed as props since they reference the component instance."
+- 이전 결정 유지: 공개 문서가 아닌 JSX 런타임 함수 이름(`jsx`, `jsxDEV`, `react/jsx-runtime`)은 본문에 쓰지 않는다(이 문서 "이해 확인"). 검토안의 `react/jsx-runtime` 표기는 이 결정에 따라 넣지 않는다.
+
+### 10.2 작업 순서
+
+#### 1. JSX 변환 조건 (지적 1)
+- 대상: `content.mdx:10`, `meta.ts` simplifications 2번
+- 변경: 본문 마지막 두 문장을 "React 19가 요구하는 새 JSX 변환을 쓰는 빌드는 `createElement`가 아니라 빌드 도구 설정이 정한 JSX 런타임 함수를 부르지만, 만들어지는 element의 `type`, `props`, `key`는 같습니다. 예전 JSX 변환은 JSX를 `createElement` 호출로 바꾸며, React 19 업그레이드 가이드는 이 경우 경고가 나온다고 안내합니다." 취지로 바꾼다. simplifications 2번에 "새 변환에서도 `<div {...props} key="x" />`처럼 key를 spread 뒤에 쓰면 createElement 호출로 바뀝니다(이 프로젝트의 Vite 8 oxc 변환 결과)"를 더하고 첫 문장을 새 변환 조건으로 한정한다.
+- 완료 조건: `grep -n "createElement가 아니라" app/concepts/jsx-to-element/{content.mdx,meta.ts}`의 모든 줄이 "새 JSX 변환" 조건과 같은 문장에 있다. 업그레이드 가이드 링크는 meta.references에 이미 있음(`#new-jsx-transform-is-now-required`).
+
+#### 2. children 규칙 (지적 2)
+- 대상: `content.mdx:15`, 결과 표 children 행(`content.mdx:124-128`)
+- 변경: "자식이 없으면 `props`에 `children` 키가 없고, 하나면 그 값이, 둘 이상이면 배열이 들어갑니다. 태그 사이의 텍스트와 `{}` 표현식은 각각 한 자식으로 셉니다. 예제 1의 `<h1>안녕, {name}</h1>`은 텍스트와 `{name}` 두 자식이라 배열입니다(예제 2의 `h2`와 `section`도 참고)." 취지. 표 칸은 "(없으면 키 없음, 하나면 그 값, 둘 이상이면 배열)"로.
+- 주의: "예제 1의 h1 children이 배열"은 예제 출력이 아니므로 "실행 결과"처럼 쓰지 않고 규칙 설명으로 쓴다.
+- 완료 조건: 빌드 HTML에 새 문장과 표 칸이 렌더되고 `<code>` 앞뒤 공백 grep 0건.
+
+#### 3. 예제 3의 React 19 기준 표시 (지적 3)
+- 대상: `content.mdx:69` 제목, `:76` 퀴즈 질문, react18 Callout(`:89-98`)
+- 변경: 제목을 "예제 3: key와 ref는 어디에 들어갈까 (React 19 기준)", 퀴즈 질문 끝에 "(React 19 기준)". Callout 끝에 "그래서 React 18에서는 ref가 props에 들어가지 않아 예제 3의 둘째·셋째 줄 결과가 다릅니다." 한 문장. 18의 정확한 출력값과 경고 문구는 쓰지 않는다(사용자 결정).
+- 주의: `tests/`에 "예제 3" 제목이나 퀴즈 질문 문자열을 단언하는 곳은 없다(grep 확인). 예제 파일·기대 출력은 바꾸지 않는다.
+- 완료 조건: 빌드 HTML에서 "React 19 기준" 2회, Callout 새 문장 1회.
+
+#### 4. render 호출과 컴포넌트 호출의 시점 (지적 4)
+- 대상: `scenarios.ts:89`(element-object 7단계 explanation), `meta.ts` simplifications 5번
+- 변경: 7단계 설명을 "render에 fromJsx를 넘기면 React가 그 element를 렌더하면서 Greeting을 한 번 호출합니다. 이 호출은 render 줄이 실행되는 그 자리에서 바로 일어나지 않으며, 시점은 \"렌더링은 컴포넌트 함수를 호출하는 것\"에서 다룹니다. 이 단계는 그 결과를 한 단계로 묶어 보입니다. fromCall은 렌더하지 않았으므로 호출되지 않습니다." 취지로. simplifications 5번에 "컴포넌트 호출은 render 줄에서 바로 일어나지 않습니다" 한 문장을 더한다.
+- 주의: 단계의 `line`·`state`·`output`은 바꾸지 않는다(시나리오 불변식). 제목 "render: React가 Greeting을 호출"은 유지.
+- 완료 조건: `npm test`의 `concept.test.ts`·`Simulator.test.tsx` 통과, 시뮬레이터 7단계에서 새 설명이 보임(dev 브라우저).
+
+#### 5. 검증과 사용자 검토
+- 검증: `npm run lint && npm run format:check && npm run typecheck && npm test && npm run test:build`, 그다음 `npx playwright test tests/e2e/navigation.spec.ts tests/e2e/react-examples.spec.ts && npx playwright test -g "jsx-to-element"`(공통 코드 변경 없음). 빌드 HTML에서 `**` 0건·`<code>` 공백 0건.
+- 사용자 검토: content-guide 10단계("본문을 고치면 다시 검토받고 `reviewedAt`을 갱신")에 따라 승인 후 `meta.reviewedAt`을 승인 날짜로 바꾸고, 같은 날짜로 `tests/e2e/concept.spec.ts:36`의 "검토일 2026-11-03" 단언을 고친다(2026-11-03 마무리 때와 같은 처리).
+- 커밋: 사용자가 요청할 때만. jsx-to-element 파일, `tests/e2e/concept.spec.ts`, 이 계획 문서만 스테이징한다(`.claude/review/`의 다른 작업 산출물은 제외).
+
+### 10.3 위험 요소
+- simplifications 문장이 길어져 단순화 목록이 읽기 어려워짐 → 각 항목에 한두 문장만 더한다.
+- 시나리오 설명 변경이 Simulator 스냅샷성 테스트에 걸림 → 작업 4 완료 조건의 `npm test`로 확인.
+- `reviewedAt` 변경이 sitemap `lastmod`·구조화 데이터를 바꿈 → 의도된 변경, test:build로 확인.
+
 ## 변경 이력
 - 2026-11-03 (사용자 요청): 사이트 강조색을 react.dev 색으로 변경 — 작업 순서 0 추가. 개발 서버 포트를 8888로(`.claude/launch.json`, 다른 프로젝트가 5173 사용) — 작업 순서 영향 없음
 
 - 2026-11-03 (사용자 검토 의견 8건): 본문·meta·예제 3 주석 수정 — 작업 순서 2·1. ① 단순화 3번을 "key를 쓴 element만" 비열거 key 접근자로 한정(19.3.1 실행: key 없는 jsxDEV·createElement는 `'key' in props` false) ② StrictMode에서 컴포넌트가 두 번 호출되어 로그가 두 번 찍힌다는 단순화 추가(근거: `tests/fixtures/react-examples/strict-mode.jsx` 기대 출력의 render 2회. "18부터 숨기지 않음" 같은 버전 이력은 미확인이라 쓰지 않음) ③ react18 Callout의 title이 라벨 "React 18에서는"과 중복 → title 제거 ④ 자식이 하나면 그 값, 둘 이상이면 배열(예제 2 h2·section) ⑤ key는 문자열로 바뀜(react.dev createElement "coerced to a string", 19.3.1 `key={0}` → `"0"`) ⑥ type의 단순화(19.3.1: Fragment는 symbol, memo·forwardRef는 object, 클래스는 function)와 "그 이름의 변수 값이 type" ⑦ 클래스 ref: element의 `props.ref`에는 있지만(19.3.1 실행) 인스턴스 `this.props`로는 전달되지 않음(React 19 글) ⑧ 예제 3에 실제로는 useRef를 쓴다는 주석. 접근 방식·범위 변화 없음 → 상태 `승인` 유지
+
+- 2026-11-12 (2차 외부 검토 Minor 1건): react18 Callout의 18 문장 위치·내용 수정, 출력값은 쓰지 않기로 사용자 재확인 — 10절 작업 3
+- 2026-11-12 (외부 검토 의견 Minor 4건): JSX 변환 조건·children 규칙·예제 3의 React 19 표시·render 시점 문구 수정 — 10절 작업 순서 1~5 추가. 18 출력값은 쓰지 않기로 사용자 결정. 상태: 10절만 승인 대기
 
 ## 구현 진행
 
@@ -363,6 +421,19 @@
 - [x] 검토 의견 반영(변경 이력 2026-11-03 8건) — 실행 확인(19.3.1): key 없는 element `'key' in props` false·있으면 true, `key={0}` → `"0"`, 클래스 type element의 `props.ref` 존재, Fragment symbol·memo/forwardRef object·클래스 function, 예제 1을 StrictMode로 감싸면 `Greeting 호출: 민지` 2회(jsdom 스크래치 실행). 메인 재실행: lint·format:check·typecheck 통과, vitest 141, test:build 26, playwright 82 passed·10 skipped, `<code>` 공백 0, 빌드 HTML의 "React 18에서는" 1회(중복 해소)
 - 재리뷰(수정 범위): Critical·High 0. 남은 Low는 리뷰 1차 ①③(파비콘·OG 색, `객체` 검색 가정). ②는 이번 수정으로 해소
 - 마무리(2026-11-03, 사용자 최종 승인): content-guide 10단계에 따라 `meta.reviewedAt: '2026-11-03'`. 이에 따라 `tests/e2e/concept.spec.ts`의 "검토 중" 배지 단언을 "검토일 2026-11-03"으로 바꿈(사용자 확인). 메인 재실행: format:check·typecheck 통과, vitest 141, test:build 26(sitemap `lastmod 2026-11-03`), playwright 82 passed·10 skipped. main에 직접 커밋(사용자 선택)
+
+### 10절 사후 검토 수정 (2026-11-12)
+
+- baseline (2026-11-12, `4e6f8f0`): lint·format:check·typecheck 통과 / vitest 24 files·182 통과
+- 구현 방식: 문구 수정뿐이라 sonnet-implementation 규칙(문서·짧은 변경)에 따라 메인이 직접 수정
+- [x] 1. JSX 변환 조건 — `content.mdx:10`, `meta.ts` simplifications 2번. 빌드 HTML에 "새 JSX 변환을 쓰는 빌드" 2회(본문·단순화), "spread 뒤에" 1회
+- [x] 2. children 규칙 — `content.mdx:15`, 표 칸 `content.mdx:127`. 빌드 HTML에 "`children` 키가 없고" 1회, "없으면 키 없음" 1회. 공백이 든 `안녕, ` 코드가 잘 보이지 않아 `"안녕, "`으로 따옴표 표기(계획 문구의 표기만 조정)
+- [x] 3. 예제 3 React 19 기준 — 제목 `content.mdx:69`, 퀴즈 `:76`, Callout `:97-98`. 빌드 HTML "React 19 기준" 2회, Callout 새 문장 1회. 18 출력값은 쓰지 않음
+- [x] 4. render 시점 — `scenarios.ts:89`, `meta.ts` simplifications 5번. 빌드 결과(8890 임시 정적 서버, 확인 후 launch.json 원복)에서 시뮬레이터 7/7단계 설명에 새 문장 표시, 콘솔 에러 0. 문구 "이 단계는 그 결과를 한 단계로" → "시뮬레이터는 그 과정을 한 단계로"(중복 표현 정리)
+- [x] 5. 검증·사용자 검토 — 검증 완료: lint·format:check·typecheck 통과, vitest 182, test:build 31, `**` 0·의도하지 않은 `<code>` 공백 0, e2e navigation+react-examples 26 passed·10 skipped, concept·no-js·responsive 31 passed·3 skipped, a11y "개념 페이지" 12 passed. 마무리(사용자 최종 승인): `meta.reviewedAt: '2026-11-12'`, `tests/e2e/concept.spec.ts:36` "검토일 2026-11-12". 재실행: lint·format:check·typecheck 통과, vitest 182, test:build 31(sitemap jsx-to-element lastmod 2026-11-12), e2e navigation·react-examples·concept·no-js·responsive 57 passed·13 skipped, a11y "개념 페이지" 12 passed
+- 리뷰 1차(critical-code-review, 메인 직접): Critical 0 · High 0 · Low 1(보고)
+  - Low: `app/concepts/jsx-to-element/content.mdx:97` Callout 새 문장의 "그래서"가 앞 문장(문서·실행 불일치)에 이어져, 18 결과가 다른 이유를 문서 불일치로 오해할 수 있음
+- [x] 2차 외부 검토(2026-11-12, Minor 1건 = 위 Low와 같은 지적) 반영 — 18 문장을 Callout 끝에서 첫 문장("18까지는 ref가 element.ref에") 바로 뒤로 옮기고, 무엇이 달라지는지(둘째 줄 키 목록에 `ref` 없음, `props.ref`가 없어 셋째 줄 비교 결과가 다름)를 문서 근거 범위에서 씀. 검토안의 "18.3.1 실행 시 `["placeholder"]`·`false`" 출력값은 사용자 결정(문서 근거만 유지)으로 넣지 않음. 추가 확인 2건(JSX → 객체 문서 문장, 클래스 ref Note)은 1차에서 메인이 확인한 것과 같아 수정 없음. 메인 재실행: lint·format:check·typecheck 통과, vitest 182, test:build 31, 빌드 HTML에 옛 문장 0회·`<code>` 공백 0, e2e concept·no-js·react-examples 23 passed·13 skipped, a11y "개념 페이지" 12 passed. 재리뷰(수정 범위): Critical·High 0, Low 해소
 
 ## 구현 결과
 
@@ -411,3 +482,41 @@
    <details><summary>답</summary>라이트 배경 #fafaf9에서 대비 4.44, 강조 배경 #e6f7ff 위에서 4.22로 AA(4.5)에 못 미친다. 홈 보기 전환 버튼(`text-accent` on `bg-highlight`) 같은 곳에서 axe e2e가 실패한다(작업 순서 0).</details>
 5. 시뮬레이터 7단계는 "React가 Greeting을 한 번 호출"한다고 보여 준다. 독자가 StrictMode로 감싼 앱에서 예제를 돌리면 왜 결과가 다른가?
    <details><summary>답</summary>StrictMode는 개발 빌드에서 컴포넌트를 두 번 호출하므로 `Greeting 호출: 민지`가 두 번 찍힌다. 예제는 StrictMode 없이 렌더하고, 이 차이는 simplifications에 적었다. 이유는 로드맵 3번 개념에서 다룬다(변경 이력 검토 의견 ②).</details>
+
+### 사후 검토 수정 결과 (2026-11-12)
+
+#### 계획 대비 실제 구현
+- 10절 작업 1~5를 계획대로 반영했다. 달라진 점: `안녕, `를 `"안녕, "`로 따옴표 표기(공백이 보이도록), 시뮬레이터 7단계 문구의 중복 표현 정리, 2차 외부 검토로 react18 Callout의 18 문장을 첫 문장 뒤로 옮김(변경 이력).
+
+#### 코드 리뷰
+- Critical·High 0. Low 1(Callout "그래서" 인과)은 2차 외부 검토와 같은 지적이라 사용자 요청으로 고쳤다. 남은 지적 없음.
+
+#### 후속 작업
+- 없음
+
+#### 이해 확인
+
+##### 설명할 수 있어야 하는 기술적 판단
+- [Claude 판단] 검토안이 제안한 `react/jsx-runtime` 표기를 본문에 넣지 않고 "빌드 도구 설정이 정한 JSX 런타임 함수"로 유지했다. 1번 개념 작성 때 "공개 문서에 없는 런타임 API 이름은 본문에 쓰지 않는다"고 정한 것을 따랐다. 버린 대안: 검토안 그대로 모듈 이름 명시.
+- [Claude 판단] 새 변환에서도 key를 spread 뒤에 쓰면 createElement로 바뀐다는 내용을 본문이 아니라 simplifications 2번에만 넣고, 근거를 "이 프로젝트의 Vite 8 oxc 변환 결과"로 한정했다. react.dev 문서가 아니라 변환기 실행 결과가 근거라서, 변환기에 의존하는 주장임을 드러내기 위해서다.
+- [Claude 판단] 시점 지적(지적 4)은 시뮬레이터 7단계 설명과 simplifications 5번만 고치고 본문 `content.mdx:18,43,46`은 두었다. 본문은 "React가 렌더할 때", "render에 넘긴 뒤"라서 즉시 호출을 주장하지 않는다. 단계의 `line`·`state`·`output`도 시나리오 불변식 때문에 그대로 두었다.
+- [무검토 승인] 예제 3 제목과 퀴즈 질문에 "(React 19 기준)"을 붙였다(계획 작업 3).
+- React 18 차이는 정확한 18.3.1 출력값(`["placeholder"]`, `false`)을 쓰지 않고, 문서로 설명되는 범위("둘째 줄 키 목록에 ref가 없고 셋째 줄 비교 결과가 다르다")만 썼다. 18 실행은 `npm test`가 재검증하지 않고 AGENTS.md가 18 차이를 릴리스 노트·업그레이드 가이드 근거로 제한하기 때문이다(사용자 결정 2회).
+
+##### 배경지식
+- JSX 변환: 새(automatic) 변환은 `react/jsx-runtime`의 함수를 import해 부르고, 예전(classic) 변환은 `React.createElement`를 부른다. React 19 업그레이드 가이드는 새 변환을 "required"라고 하지만, 실제로 적은 결과는 경고뿐이다. oxc 실행: `<div {...props} key="x" />`는 automatic에서도 createElement, `<div key="x" {...props} />`는 jsx.
+- children: 19.3.1에서 자식이 없으면 `'children' in props`가 false(createElement·jsx 모두). 텍스트와 `{}` 표현식은 각각 한 자식이라 `<h1>안녕, {name}</h1>`은 `jsxs`로 배열 children을 만든다.
+- `createRoot(...).render(...)`는 동기적이지 않아서 호출한 줄에서 컴포넌트를 호출하지 않는다(2번 개념 `render-and-commit/content.mdx:12`).
+- `reviewedAt`은 sitemap `lastmod`와 구조화 데이터 `dateModified`로 쓰이므로 본문을 고치면 재검토 후 갱신한다(content-guide 10단계).
+
+##### 확인 질문
+1. 페이지에 "실제 빌드는 createElement를 부르지 않는다"고 조건 없이 쓰면 어떤 독자가 혼란을 겪나? 새 변환을 써도 createElement가 나오는 경우는?
+   <details><summary>답</summary>예전(classic) 변환을 쓰는 프로젝트(주로 React 16 이하 설정)의 빌드 결과를 본 독자다. 새 변환에서도 key를 spread 뒤에 쓰면(`<div {...props} key="x" />`) createElement로 바뀐다(10.1 사실, oxc 실행, meta simplifications 2번).</details>
+2. 왜 본문에 `react/jsx-runtime`이나 `jsx` 함수 이름을 쓰지 않았나? 쓰려면 무엇이 먼저 필요한가?
+   <details><summary>답</summary>react.dev 공개 문서가 다루는 API가 아니라서, 사이트 정확성 원칙(공개 동작은 react.dev와 실행 결과)에 맞추려고 1번 개념 작성 때 쓰지 않기로 했다. 쓰려면 근거 문서를 확인하거나 2부(내부 구현) 페이지에서 고정 소스 링크로 다뤄야 한다(이 문서 "이해 확인" 첫 절, 10.1).</details>
+3. React 18 차이를 Callout 맨 끝에 "그래서 …"로 붙였을 때 무엇이 문제였나?
+   <details><summary>답</summary>바로 앞 문장이 createElement 문서와 19.3.1 실행 결과가 다르다는 내용이라, 18의 동작이 그 문서 불일치 때문인 것처럼 읽혔다. 실제 이유는 "18까지는 ref가 element.ref에 있었다"는 첫 문장이라 그 바로 뒤로 옮겼다(구현 진행 2차 외부 검토).</details>
+4. 시뮬레이터 7단계에서 explanation만 고치고 `state`나 `line`은 왜 그대로 두었나? render 다음 줄에 로그가 있었다면 시나리오는 어떻게 그려야 하나?
+   <details><summary>답</summary>예제 1은 render가 마지막 줄이라 render 뒤 출력 순서가 문제 되지 않고, 각 단계가 전체 스냅샷이며 마지막 출력이 expectedOutput과 같아야 하므로(시나리오 불변식) 상태를 바꿀 이유가 없었다. render 다음 줄 로그가 있으면 그 로그가 컴포넌트 호출보다 먼저 찍히므로, 2번 개념처럼 render 단계와 컴포넌트 호출 단계를 나눠야 한다(render-and-commit 예제 1).</details>
+5. 본문을 고친 뒤 `reviewedAt`을 바꾸지 않으면 무엇이 어긋나나?
+   <details><summary>답</summary>sitemap `lastmod`와 구조화 데이터 `dateModified`가 옛 날짜로 남아 수정 사실을 반영하지 못하고, 페이지 검토일 배지도 검토되지 않은 문장을 검토했다고 표시한다(content-guide:186). 날짜를 바꾸면 `tests/e2e/concept.spec.ts:36` 단언도 함께 바꿔야 한다.</details>
